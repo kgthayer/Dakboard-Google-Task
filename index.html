@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Tasks Widget</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <h1>My Google Tasks</h1>
+    <button onclick="handleAuthClick()">Login with Google</button>
+    <ul id="taskList"></ul>
+
+    <script>
+        const API_KEY = 'YOUR_API_KEY'; // Replace with your API key
+        const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your OAuth Client ID
+        const SCOPES = 'https://www.googleapis.com/auth/tasks';
+
+        // Load the Google API client
+        function loadGoogleApiClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                clientId: CLIENT_ID,
+                scope: SCOPES,
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/tasks/v1/rest']
+            }).then(function() {
+                // If user is signed in, fetch tasks
+                if (gapi.auth2.getAuthInstance().isSignedIn.get()) {
+                    fetchGoogleTasks();
+                }
+            });
+        }
+
+        // Load the API library
+        gapi.load('client:auth2', loadGoogleApiClient);
+
+        // Function to handle sign-in
+        function handleAuthClick() {
+            gapi.auth2.getAuthInstance().signIn().then(function() {
+                fetchGoogleTasks(); // After authentication, fetch tasks
+            });
+        }
+
+        // Fetch tasks from Google Tasks API
+        function fetchGoogleTasks() {
+            gapi.client.tasks.tasks.list({
+                tasklist: '@default' // Access the default task list
+            }).then(function(response) {
+                const tasks = response.result.items;
+                renderTasks(tasks);
+            }).catch(function(error) {
+                console.error('Error fetching tasks:', error);
+            });
+        }
+
+        // Render tasks to the HTML
+        function renderTasks(tasks) {
+            const taskListElement = document.getElementById('taskList');
+            taskListElement.innerHTML = ''; // Clear existing tasks
+
+            tasks.forEach(function(task) {
+                const taskItem = document.createElement('li');
+                taskItem.textContent = task.title;
+                taskItem.className = task.status === 'completed' ? 'completed' : 'incomplete';
+
+                // Toggle task completion on click
+                taskItem.onclick = function() {
+                    toggleTaskCompletion(task, taskItem);
+                };
+
+                taskListElement.appendChild(taskItem);
+            });
+        }
+
+        // Toggle the completion status of a task
+        function toggleTaskCompletion(task, taskElement) {
+            task.status = (task.status === 'completed') ? 'needsAction' : 'completed';
+            updateTaskStatus(task);
+            taskElement.classList.toggle('completed', task.status === 'completed');
+            triggerConfetti();
+        }
+
+        // Update task status in Google Tasks API
+        function updateTaskStatus(task) {
+            gapi.client.tasks.tasks.update({
+                tasklist: '@default',
+                task: task.id,
+                status: task.status
+            }).then(function(response) {
+                console.log('Task updated:', response);
+            }).catch(function(error) {
+                console.error('Error updating task:', error);
+            });
+        }
+
+        // Trigger confetti animation when a task is completed
+        function triggerConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 90,
+                origin: { y: 0.6 },
+            });
+        }
+    </script>
+</body>
+</html>
