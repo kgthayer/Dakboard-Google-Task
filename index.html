@@ -76,11 +76,11 @@
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
         // Your client ID from Google Cloud Console
-        const CLIENT_ID = '803952048794-k1dbsn1v7hfaep7ps9sut3ehsv2kam0p.apps.googleusercontent.com'; // Replace with your own client ID
+        const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your own client ID
         const SCOPES = 'https://www.googleapis.com/auth/tasks.readonly';
         let tasksData = [];
 
-        // Start the app
+        // Load the Google API client and initialize OAuth
         function startApp() {
             gapi.load('client:auth2', initAuth);
         }
@@ -91,7 +91,12 @@
                 client_id: CLIENT_ID,
                 scope: SCOPES
             }).then(() => {
-                gapi.auth2.getAuthInstance().signIn().then(loadTasks);
+                // Check if user is already signed in
+                if (gapi.auth2.getAuthInstance().isSignedIn.get()) {
+                    loadTasks(); // Load tasks if signed in
+                } else {
+                    gapi.auth2.getAuthInstance().signIn().then(loadTasks); // Sign in and load tasks
+                }
             });
         }
 
