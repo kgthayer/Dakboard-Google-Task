@@ -1,17 +1,71 @@
-<style>
-    input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        margin-right: 10px;
-    }
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Tasks with Checkboxes</title>
+    <style>
+        input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        li {
+            list-style-type: none; /* Removes the bullet points */
+        }
+    </style>
+</head>
+<body>
+    <h1>My Google Tasks</h1>
+    <ul id="task-list"></ul> <!-- Placeholder for the task list -->
 
-    li {
-        margin-bottom: 10px;
-        font-size: 18px;
-    }
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your own client ID
+        const SCOPES = 'https://www.googleapis.com/auth/tasks.readonly';
 
-    li.completed {
-        text-decoration: line-through;
-        color: gray;
-    }
-</style>
+        function startApp() {
+            gapi.load('client:auth2', initAuth);
+        }
+
+        function initAuth() {
+            gapi.auth2.init({
+                client_id: CLIENT_ID,
+                scope: SCOPES
+            }).then(() => {
+                gapi.auth2.getAuthInstance().signIn().then(loadTasks);
+            });
+        }
+
+        function loadTasks() {
+            gapi.client.load('tasks', 'v1', function() {
+                // Make API call to fetch tasks
+                gapi.client.tasks.tasks.list({
+                    tasklist: '@default', // Default task list
+                    showCompleted: true // Show completed tasks
+                }).then(function(response) {
+                    const tasks = response.result.items;
+                    displayTasks(tasks);
+                });
+            });
+        }
+
+        function displayTasks(tasks) {
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = ''; // Clear the existing list
+
+            tasks.forEach(task => {
+                const listItem = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = task.id;
+                checkbox.checked = task.status === 'completed'; // Check the box if the task is completed
+                const taskLabel = document.createTextNode(` ${task.title}`);
+                
+                // Append checkbox and task label to the list item
+                listItem.appendChild(checkbox);
+                listItem.appendChild(taskLabel);
+                taskList.appendChild(listItem);
+            });
+        }
+
+        window.onload = startApp;
+    </script>
+</body>
+</html>
