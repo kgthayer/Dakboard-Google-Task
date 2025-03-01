@@ -1,24 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Google Tasks with Checkboxes</title>
-    <style>
-        input[type="checkbox"] {
-            margin-right: 10px;
-        }
-        li {
-            list-style-type: none; /* Removes the bullet points */
-        }
-    </style>
-</head>
-<body>
-    <h1>My Google Tasks</h1>
-    <ul id="task-list"></ul> <!-- Placeholder for the task list -->
-
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
         const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your own client ID
-        const SCOPES = 'https://www.googleapis.com/auth/tasks.readonly';
+        const SCOPES = 'https://www.googleapis.com/auth/tasks'; // Add more scopes if needed
 
         function startApp() {
             gapi.load('client:auth2', initAuth);
@@ -29,43 +15,40 @@
                 client_id: CLIENT_ID,
                 scope: SCOPES
             }).then(() => {
-                gapi.auth2.getAuthInstance().signIn().then(loadTasks);
+                autoSignIn();
             });
         }
 
-        function loadTasks() {
-            gapi.client.load('tasks', 'v1', function() {
-                // Make API call to fetch tasks
-                gapi.client.tasks.tasks.list({
-                    tasklist: '@default', // Default task list
-                    showCompleted: true // Show completed tasks
-                }).then(function(response) {
-                    const tasks = response.result.items;
-                    displayTasks(tasks);
+        function autoSignIn() {
+            const authInstance = gapi.auth2.getAuthInstance();
+
+            // Check if the user is already signed in
+            if (authInstance.isSignedIn.get()) {
+                console.log("User is already signed in");
+                // User is signed in, proceed to handle tasks
+                onSignIn(authInstance.currentUser.get());
+            } else {
+                console.log("User is not signed in");
+                // Automatically sign in the user
+                authInstance.signIn().then(function (googleUser) {
+                    console.log("Successfully signed in", googleUser);
+                    onSignIn(googleUser);
+                }).catch(function (error) {
+                    console.error("Sign-in failed", error);
                 });
-            });
+            }
         }
 
-        function displayTasks(tasks) {
-            const taskList = document.getElementById('task-list');
-            taskList.innerHTML = ''; // Clear the existing list
-
-            tasks.forEach(task => {
-                const listItem = document.createElement('li');
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = task.id;
-                checkbox.checked = task.status === 'completed'; // Check the box if the task is completed
-                const taskLabel = document.createTextNode(` ${task.title}`);
-                
-                // Append checkbox and task label to the list item
-                listItem.appendChild(checkbox);
-                listItem.appendChild(taskLabel);
-                taskList.appendChild(listItem);
-            });
+        function onSignIn(googleUser) {
+            // Handle post sign-in logic, like calling Google Tasks API
+            console.log("User signed in: ", googleUser);
         }
 
+        // Initialize the app on page load
         window.onload = startApp;
     </script>
+</head>
+<body>
+    <h1>Welcome to My Google Tasks Widget</h1>
 </body>
 </html>
