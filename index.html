@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Tasks with Confetti</title>
     <style>
-        /* Basic Styling for Tasks */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -15,6 +14,17 @@
             align-items: center;
             height: 100vh;
             background-color: #f4f4f4;
+            flex-direction: column;
+        }
+
+        #tasks-container {
+            width: 80%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 30px;
         }
 
         #task-list {
@@ -27,6 +37,12 @@
             font-size: 18px;
             display: flex;
             align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        li:hover {
+            background-color: #e0e0e0;
+            cursor: pointer;
         }
 
         input[type="checkbox"] {
@@ -35,7 +51,6 @@
             height: 20px;
         }
 
-        /* Styling for Confetti */
         .confetti-container {
             position: absolute;
             top: 0;
@@ -47,7 +62,6 @@
             display: none;
         }
 
-        /* Hide the confetti container by default */
         .confetti {
             position: absolute;
             width: 10px;
@@ -68,42 +82,43 @@
 </head>
 <body>
 
-    <div class="confetti-container" id="confettiContainer"></div>
-
     <h1>Google Tasks</h1>
-    <ul id="task-list"></ul>
+    <p>Manage your to-do list and enjoy some confetti when you complete a task!</p>
+
+    <div id="tasks-container">
+        <h2>Your Tasks</h2>
+        <ul id="task-list"></ul>
+    </div>
+
+    <div class="confetti-container" id="confettiContainer"></div>
 
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
-        // Your client ID from Google Cloud Console
-        const CLIENT_ID = '803952048794-k1dbsn1v7hfaep7ps9sut3ehsv2kam0p.apps.googleusercontent.com'; // Replace with your own client ID
+        const CLIENT_ID = '106217006671-essjp60qgt03cjntpcrc6jr412vj7njq.apps.googleusercontent.com'; // Replace with your actual Client ID
         const SCOPES = 'https://www.googleapis.com/auth/tasks.readonly';
+
         let tasksData = [];
 
-        // Load the Google API client and initialize OAuth
         function startApp() {
             gapi.load('client:auth2', initAuth);
         }
 
-        // Initialize OAuth2 client
         function initAuth() {
             gapi.auth2.init({
                 client_id: CLIENT_ID,
                 scope: SCOPES
             }).then(() => {
-                // Check if user is already signed in
-                if (gapi.auth2.getAuthInstance().isSignedIn.get()) {
-                    loadTasks(); // Load tasks if signed in
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (authInstance.isSignedIn.get()) {
+                    loadTasks(); // Load tasks if already signed in
                 } else {
-                    gapi.auth2.getAuthInstance().signIn().then(loadTasks); // Sign in and load tasks
+                    authInstance.signIn().then(loadTasks); // Trigger login and then load tasks
                 }
             });
         }
 
-        // Load the tasks from Google Tasks API
         function loadTasks() {
             gapi.client.load('tasks', 'v1', function () {
-                // Fetch the tasks from the default task list
                 gapi.client.tasks.tasks.list({
                     tasklist: '@default',
                     showCompleted: true
@@ -114,7 +129,6 @@
             });
         }
 
-        // Display the tasks as checkboxes
         function displayTasks(tasks) {
             const taskList = document.getElementById('task-list');
             taskList.innerHTML = ''; // Clear the existing list
@@ -124,55 +138,52 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = task.id;
-                checkbox.checked = task.status === 'completed'; // Mark completed tasks as checked
+                checkbox.checked = task.status === 'completed'; // Check if completed
                 checkbox.onclick = function () {
                     handleTaskCompletion(task, checkbox.checked);
                 };
 
                 const taskLabel = document.createTextNode(` ${task.title}`);
+                const statusLabel = document.createElement('span');
+                statusLabel.textContent = task.status === 'completed' ? '✔ Completed' : 'Pending';
+                statusLabel.style.marginLeft = '10px';
+
                 listItem.appendChild(checkbox);
                 listItem.appendChild(taskLabel);
+                listItem.appendChild(statusLabel);
                 taskList.appendChild(listItem);
             });
         }
 
-        // Handle task completion and trigger confetti
         function handleTaskCompletion(task, isChecked) {
             if (isChecked) {
-                // Trigger confetti if the task is completed
-                triggerConfetti();
+                triggerConfetti(); // Trigger confetti animation
             }
         }
 
-        // Trigger Confetti animation
         function triggerConfetti() {
             const confettiContainer = document.getElementById('confettiContainer');
-            confettiContainer.style.display = 'block'; // Show the confetti container
+            confettiContainer.style.display = 'block';
 
-            // Generate random confetti pieces
             for (let i = 0; i < 100; i++) {
                 createConfetti(confettiContainer);
             }
 
-            // Hide the confetti container after the animation ends
             setTimeout(() => {
-                confettiContainer.style.display = 'none';
+                confettiContainer.style.display = 'none'; // Hide after 3 seconds
             }, 3000);
         }
 
-        // Create a single confetti piece
         function createConfetti(container) {
             const confettiPiece = document.createElement('div');
             confettiPiece.classList.add('confetti');
             confettiPiece.style.left = `${Math.random() * 100}vw`;
-            confettiPiece.style.animationDuration = `${Math.random() * 1 + 1}s`; // Random animation duration
+            confettiPiece.style.animationDuration = `${Math.random() * 1 + 1}s`;
 
-            // Append the confetti to the container
             container.appendChild(confettiPiece);
 
-            // Remove the confetti after animation
             setTimeout(() => {
-                confettiPiece.remove();
+                confettiPiece.remove(); // Remove after animation
             }, 1500);
         }
 
