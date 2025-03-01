@@ -1,5 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="e// Load the Google API client
+function loadGoogleApiClient() {
+    gapi.client.init({
+        apiKey: 'AIzaSyBTpqEKKXrIaQWIQtH3-W9XEmsY2jQClz4',
+        clientId: '106217006671-essjp60qgt03cjntpcrc6jr412vj7njq.apps.googleusercontent.com',
+        scope: 'https://www.googleapis.com/auth/tasks',
+        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/tasks/v1/rest']
+    }).then(function() {
+        // After initialization, call the Google Tasks API to get the tasks
+        gapi.client.tasks.tasks.list({
+            tasklist: '@default' // Use the default task list
+        }).then(function(response) {
+            const tasks = response.result.items;
+            // Render tasks dynamically
+            renderTasksFromGoogle(tasks);
+        });
+    });
+}
+
+// Fetch and render tasks from Google
+function renderTasksFromGoogle(tasks) {
+    const taskListElement = document.getElementById('taskList');
+    taskListElement.innerHTML = '';
+
+    tasks.forEach(task => {
+        const taskItem = document.createElement('li');
+        taskItem.textContent = task.title;
+        taskItem.className = 'task-item';
+        if (task.status === 'completed') {
+            taskItem.classList.add('completed');
+        }
+
+        taskItem.onclick = () => toggleTaskCompletion(task);
+        taskListElement.appendChild(taskItem);
+    });
+}
+
+// Call the API when the page loads
+gapi.load('client:auth2', loadGoogleApiClient);
+n">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
