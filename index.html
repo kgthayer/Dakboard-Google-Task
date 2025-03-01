@@ -112,26 +112,37 @@
                 if (authInstance.isSignedIn.get()) {
                     loadTasks(); // Load tasks if already signed in
                 } else {
-                    authInstance.signIn().then(loadTasks); // Trigger login and then load tasks
+                    authInstance.signIn().then(loadTasks).catch(handleError); // Trigger login and then load tasks
                 }
-            });
+            }).catch(handleError);
         }
 
         function loadTasks() {
-            gapi.client.load('tasks', 'v1', function () {
-                gapi.client.tasks.tasks.list({
+            gapi.client.init({
+                apiKey: 'YOUR_API_KEY', // Optional API key if required by your configuration
+                clientId: CLIENT_ID,
+                scope: SCOPES,
+            }).then(() => {
+                return gapi.client.load('tasks', 'v1');
+            }).then(() => {
+                return gapi.client.tasks.tasks.list({
                     tasklist: '@default',
                     showCompleted: true
-                }).then(function (response) {
-                    tasksData = response.result.items;
-                    displayTasks(tasksData);
                 });
-            });
+            }).then(function(response) {
+                tasksData = response.result.items;
+                displayTasks(tasksData);
+            }).catch(handleError);
         }
 
         function displayTasks(tasks) {
             const taskList = document.getElementById('task-list');
             taskList.innerHTML = ''; // Clear the existing list
+
+            if (!tasks || tasks.length === 0) {
+                taskList.innerHTML = '<p>No tasks found.</p>';
+                return;
+            }
 
             tasks.forEach(task => {
                 const listItem = document.createElement('li');
@@ -185,6 +196,11 @@
             setTimeout(() => {
                 confettiPiece.remove(); // Remove after animation
             }, 1500);
+        }
+
+        function handleError(error) {
+            console.error('Error occurred:', error);
+            alert('An error occurred. Check the console for details.');
         }
 
         window.onload = startApp;
