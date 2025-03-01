@@ -1,54 +1,183 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Tasks with Confetti</title>
+    <style>
+        /* Basic Styling for Tasks */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        #task-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Styling for Confetti */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+        }
+
+        /* Hide the confetti container by default */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #ff6347;
+            animation: confetti-animation 1.5s linear infinite;
+        }
+
+        @keyframes confetti-animation {
+            0% {
+                transform: translateY(-100px);
+            }
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="confetti-container" id="confettiContainer"></div>
+
+    <h1>Google Tasks</h1>
+    <ul id="task-list"></ul>
+
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
-        const CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your own client ID
-        const SCOPES = 'https://www.googleapis.com/auth/tasks'; // Add more scopes if needed
+        // Your client ID from Google Cloud Console
+        const CLIENT_ID = '803952048794-k1dbsn1v7hfaep7ps9sut3ehsv2kam0p.apps.googleusercontent.com'; // Replace with your own client ID
+        const SCOPES = 'https://www.googleapis.com/auth/tasks.readonly';
+        let tasksData = [];
 
+        // Load the Google API client and initialize OAuth
         function startApp() {
             gapi.load('client:auth2', initAuth);
         }
 
+        // Initialize OAuth2 client
         function initAuth() {
             gapi.auth2.init({
                 client_id: CLIENT_ID,
                 scope: SCOPES
             }).then(() => {
-                autoSignIn();
+                // Check if user is already signed in
+                if (gapi.auth2.getAuthInstance().isSignedIn.get()) {
+                    loadTasks(); // Load tasks if signed in
+                } else {
+                    gapi.auth2.getAuthInstance().signIn().then(loadTasks); // Sign in and load tasks
+                }
             });
         }
 
-        function autoSignIn() {
-            const authInstance = gapi.auth2.getAuthInstance();
-
-            // Check if the user is already signed in
-            if (authInstance.isSignedIn.get()) {
-                console.log("User is already signed in");
-                // User is signed in, proceed to handle tasks
-                onSignIn(authInstance.currentUser.get());
-            } else {
-                console.log("User is not signed in");
-                // Automatically sign in the user
-                authInstance.signIn().then(function (googleUser) {
-                    console.log("Successfully signed in", googleUser);
-                    onSignIn(googleUser);
-                }).catch(function (error) {
-                    console.error("Sign-in failed", error);
+        // Load the tasks from Google Tasks API
+        function loadTasks() {
+            gapi.client.load('tasks', 'v1', function () {
+                // Fetch the tasks from the default task list
+                gapi.client.tasks.tasks.list({
+                    tasklist: '@default',
+                    showCompleted: true
+                }).then(function (response) {
+                    tasksData = response.result.items;
+                    displayTasks(tasksData);
                 });
+            });
+        }
+
+        // Display the tasks as checkboxes
+        function displayTasks(tasks) {
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = ''; // Clear the existing list
+
+            tasks.forEach(task => {
+                const listItem = document.createElement('li');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = task.id;
+                checkbox.checked = task.status === 'completed'; // Mark completed tasks as checked
+                checkbox.onclick = function () {
+                    handleTaskCompletion(task, checkbox.checked);
+                };
+
+                const taskLabel = document.createTextNode(` ${task.title}`);
+                listItem.appendChild(checkbox);
+                listItem.appendChild(taskLabel);
+                taskList.appendChild(listItem);
+            });
+        }
+
+        // Handle task completion and trigger confetti
+        function handleTaskCompletion(task, isChecked) {
+            if (isChecked) {
+                // Trigger confetti if the task is completed
+                triggerConfetti();
             }
         }
 
-        function onSignIn(googleUser) {
-            // Handle post sign-in logic, like calling Google Tasks API
-            console.log("User signed in: ", googleUser);
+        // Trigger Confetti animation
+        function triggerConfetti() {
+            const confettiContainer = document.getElementById('confettiContainer');
+            confettiContainer.style.display = 'block'; // Show the confetti container
+
+            // Generate random confetti pieces
+            for (let i = 0; i < 100; i++) {
+                createConfetti(confettiContainer);
+            }
+
+            // Hide the confetti container after the animation ends
+            setTimeout(() => {
+                confettiContainer.style.display = 'none';
+            }, 3000);
         }
 
-        // Initialize the app on page load
+        // Create a single confetti piece
+        function createConfetti(container) {
+            const confettiPiece = document.createElement('div');
+            confettiPiece.classList.add('confetti');
+            confettiPiece.style.left = `${Math.random() * 100}vw`;
+            confettiPiece.style.animationDuration = `${Math.random() * 1 + 1}s`; // Random animation duration
+
+            // Append the confetti to the container
+            container.appendChild(confettiPiece);
+
+            // Remove the confetti after animation
+            setTimeout(() => {
+                confettiPiece.remove();
+            }, 1500);
+        }
+
         window.onload = startApp;
     </script>
-</head>
-<body>
-    <h1>Welcome to My Google Tasks Widget</h1>
+
 </body>
 </html>
